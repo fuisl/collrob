@@ -1,18 +1,20 @@
 {
     "name": "ROS 2 Development Container",
     "privileged": true,
-    "remoteUser": "fuisloy",
+    "remoteUser": "dev",
     "build": {
         "dockerfile": "Dockerfile",
         "args": {
-            "USERNAME": "fuisloy"
+            "USERNAME": "dev",
+            "USER_UID": "1000",
+            "USER_GID": "1000"
         }
     },
-    "workspaceFolder": "/home/fuisloy/collrob",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/home/fuisloy/collrob,type=bind",
+    "workspaceFolder": "/home/dev/collrob",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/dev/collrob,type=bind",
     "customizations": {
         "vscode": {
-            "extensions":[
+            "extensions": [
                 "ms-vscode.cpptools",
                 "ms-vscode.cpptools-themes",
                 "twxs.cmake",
@@ -30,11 +32,12 @@
         "--net=host",
         "--pid=host",
         "--ipc=host",
-        "-e", "DISPLAY=${env:DISPLAY}"
+        "-e",
+        "DISPLAY=${env:DISPLAY}"
     ],
     "mounts": [
-       "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
-       "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached"
+        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+        "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached"
     ],
-    "postCreateCommand": "echo \"source /opt/ros/humble/setup.bash\" >> ~/.bashrc && rosdep update && rosdep install --from-paths src --ignore-src -y && sudo chown -R $(whoami) /home/fuisloy/collrob/"
+    "postCreateCommand": "echo \"source /opt/ros/humble/setup.bash\" >> ~/.bashrc && rosdep update && rosdep install --from-paths src --ignore-src -y && sudo chown -R $(whoami) /home/$(whoami)/collrob/"
 }
