@@ -54,3 +54,5 @@ CATKIN_IGNORE
 
 *.pdf
 *.gv
+
+.vscode/
