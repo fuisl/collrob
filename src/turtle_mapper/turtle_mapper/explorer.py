@@ -62,8 +62,8 @@ class SimpleExplorer(Node):
                       (1, -1, math.sqrt(2)), (1, 1, math.sqrt(2))]
 
         # ---- Controller params ----
-        self.lin_speed = 0.18
-        self.ang_speed = 0.9
+        self.lin_speed = 0.08
+        self.ang_speed = 0.5
         self.yaw_turn_thresh = 0.45      # rad: rotate-in-place if |err| above this
         self.waypoint_tol = 0.15         # m
         self.lookahead_idx = 3           # follow a point a few steps ahead
