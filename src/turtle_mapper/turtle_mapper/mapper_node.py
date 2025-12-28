@@ -4,6 +4,7 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from rclpy.time import Time
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
 
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import OccupancyGrid
@@ -122,7 +123,12 @@ class SlamMapper(Node):
         self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         # ROS I/O
-        self.map_pub = self.create_publisher(OccupancyGrid, "/map", 1)
+        map_qos = QoSProfile(
+        depth=1,
+        reliability=ReliabilityPolicy.RELIABLE,
+        durability=DurabilityPolicy.TRANSIENT_LOCAL
+        )
+        self.map_pub = self.create_publisher(OccupancyGrid, "/map", map_qos)
         self.scan_sub = self.create_subscription(LaserScan, "/scan", self.on_scan, 10)
         self.timer = self.create_timer(1.0, self.publish_map)
 
@@ -254,15 +260,32 @@ class SlamMapper(Node):
         if not self.in_bounds(r_gx, r_gy):
             return
 
+        free_cap = scan.range_max * 0.98
+
         for i in range(0, len(scan.ranges), self.beam_step_map):
-            r = scan.ranges[i]
-            if math.isinf(r) or math.isnan(r):
+            r_raw = scan.ranges[i]
+
+            # Decide whether this ray ends in an obstacle
+            hit = True
+            if math.isnan(r_raw):
                 continue
-            if r < scan.range_min or r > scan.range_max:
-                continue
+
+            if math.isinf(r_raw):
+                # no hit: carve free space out to cap
+                r = free_cap
+                hit = False
+            else:
+                r = r_raw
+                if r < scan.range_min:
+                    continue
+                if r > scan.range_max:
+                    # treat as no hit (rare but safe)
+                    r = free_cap
+                    hit = False
 
             angle = scan.angle_min + i * scan.angle_increment
             theta = ryaw + angle
+
             ex = rx + r * math.cos(theta)
             ey = ry + r * math.sin(theta)
 
@@ -274,13 +297,24 @@ class SlamMapper(Node):
             if len(line) < 2:
                 continue
 
-            for gx, gy in line[:-1]:
+            # Free along the ray (exclude endpoint if it's a hit)
+            free_cells = line[:-1] if hit else line
+            for gx, gy in free_cells:
                 if self.in_bounds(gx, gy):
-                    self.log_odds[gy, gx] = np.clip(self.log_odds[gy, gx] + self.l_free, self.l_min, self.l_max)
+                    self.log_odds[gy, gx] = np.clip(
+                        self.log_odds[gy, gx] + self.l_free,
+                        self.l_min, self.l_max
+                    )
 
-            gx, gy = line[-1]
-            if self.in_bounds(gx, gy):
-                self.log_odds[gy, gx] = np.clip(self.log_odds[gy, gx] + self.l_occ, self.l_min, self.l_max)
+            # Occupied only if we had a real hit
+            if hit:
+                gx, gy = line[-1]
+                if self.in_bounds(gx, gy):
+                    self.log_odds[gy, gx] = np.clip(
+                        self.log_odds[gy, gx] + self.l_occ,
+                        self.l_min, self.l_max
+                    )
+
 
     def broadcast_map_to_odom(self, odom_pose, map_pose):
         # T_map_odom = T_map_base * inv(T_odom_base)

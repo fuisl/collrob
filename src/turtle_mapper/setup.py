@@ -24,7 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'mapper_node = turtle_mapper.mapper_node:main'
+            'mapper_node = turtle_mapper.mapper_node:main',
+            "explorer = turtle_mapper.explorer:main",
         ],
     },
 )
