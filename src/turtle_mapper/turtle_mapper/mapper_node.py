@@ -103,8 +103,8 @@ class SlamMapper(Node):
 
         # Map params
         self.resolution = 0.05
-        self.size_x_m = 12.0
-        self.size_y_m = 12.0
+        self.size_x_m = 40.0
+        self.size_y_m = 40.0
         self.width = int(self.size_x_m / self.resolution)
         self.height = int(self.size_y_m / self.resolution)
         self.origin_x = -self.size_x_m / 2.0

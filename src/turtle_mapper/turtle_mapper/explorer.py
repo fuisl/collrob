@@ -241,7 +241,7 @@ class SimpleExplorer(Node):
                         visited.add((nx, ny))
                         q.append((nx, ny))
 
-            if len(cluster) < 5 or len(free_neighbors) == 0:
+            if len(cluster) < 3 or len(free_neighbors) == 0:
                 continue
 
             # cluster centroid (grid)

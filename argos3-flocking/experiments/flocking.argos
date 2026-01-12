@@ -1,0 +1,115 @@
+<?xml version="1.0" ?>
+<argos-configuration>
+
+  <framework>
+    <system threads="0" />
+    <experiment length="0"
+                ticks_per_second="120"
+                random_seed="124" />
+  </framework>
+
+  <controllers>
+    <footbot_flocking_controller id="ffc"
+      library="build/controllers/footbot_flocking/libfootbot_flocking.so">
+
+      <actuators>
+        <differential_steering implementation="default" />
+        <leds implementation="default" medium="leds" />
+      </actuators>
+
+      <sensors>
+        <!-- keep this for "rays"/visual parity -->
+        <footbot_light implementation="rot_z_only" show_rays="true" />
+
+        <!-- this is what will actually see the target (since target uses medium="leds") -->
+        <colored_blob_omnidirectional_camera
+          implementation="rot_z_only"
+          medium="leds"
+          show_rays="true" />
+
+        <!-- local obstacles -->
+        <footbot_proximity implementation="default" show_rays="true" />
+      </sensors>
+
+      <!-- Match the original style: <params> with child blocks -->
+      <params>
+        <wheel_turning hard_turn_angle_threshold="90"
+                       soft_turn_angle_threshold="70"
+                       no_turn_angle_threshold="20"
+                       max_speed="30" />
+
+        <!-- 10x10 arena: use realistic target_distance -->
+        <flocking target_distance="0.45"
+                  gain="300"
+                  exponent="2" />
+
+        <!-- Keep avoidance present but mild (per your request: "really small") -->
+        <avoidance start="0.1"
+                   full="0.30"
+                   gain="2" />
+      </params>
+
+    </footbot_flocking_controller>
+  </controllers>
+
+  <arena size="10,10,1" center="5,5,0.5">
+
+    <!-- Target: like the original demo (light entity in LED medium) -->
+    <light id="target_light"
+           position="9.3s,9.3,0.5"
+           orientation="0,0,0"
+           color="yellow"
+           intensity="3.0"
+           medium="leds" />
+
+    <!-- Outer walls -->
+    <box id="wall_north" size="10,0.12,0.5" movable="false">
+      <body position="5,10,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_south" size="10,0.12,0.5" movable="false">
+      <body position="5,0,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_east" size="0.12,10,0.5" movable="false">
+      <body position="10,5,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_west" size="0.12,10,0.5" movable="false">
+      <body position="0,5,0" orientation="0,0,0" />
+    </box>
+
+    <!-- Spawn bottom-left -->
+    <distribute>
+      <position method="uniform" min="0.8,0.8,0" max="3.0,3.0,0" />
+      <orientation method="uniform" min="10w, 0, 0" max="30, 0, 0" />
+      <entity quantity="25" max_trials="20000">
+        <foot-bot id="fb" omnidirectional_camera_aperture="80">
+          <controller config="ffc" />
+        </foot-bot>
+      </entity>
+    </distribute>
+
+  </arena>
+
+  <physics_engines>
+    <dynamics2d id="dyn2d" />
+  </physics_engines>
+
+  <!-- IMPORTANT: keep LED medium since the camera + target uses medium="leds" -->
+  <media>
+    <led id="leds" />
+  </media>
+
+  <visualization>
+    <qt-opengl>
+      <camera>
+        <placements>
+          <placement index="0"
+                     position="5,5,20"
+                     look_at="5,5,0"
+                     up="1,0,0"
+                     lens_focal_length="65" />
+        </placements>
+      </camera>
+    </qt-opengl>
+  </visualization>
+
+</argos-configuration>
